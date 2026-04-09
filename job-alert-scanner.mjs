@@ -4,6 +4,7 @@
  * Scansa portales de empleo y envía alertas por email
  */
 
+import 'dotenv/config';
 import nodemailer from 'nodemailer';
 import fetch from 'node-fetch';
 
@@ -98,11 +99,13 @@ async function searchWithExa(query) {
   }
   
   try {
+    console.log(`   🔍 Query: ${query.substring(0, 80)}...`);
+    
     const response = await fetch('https://api.exa.ai/search', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': CONFIG.exaApiKey
+        'x-api-key': CONFIG.exaApiKey
       },
       body: JSON.stringify({
         query: query,
@@ -113,7 +116,15 @@ async function searchWithExa(query) {
     
     const data = await response.json();
     
+    console.log(`   📊 Response status: ${response.status}`);
+    
+    if (data.error) {
+      console.log(`   ❌ Exa error: ${data.error}`);
+      return [];
+    }
+    
     if (data.results) {
+      console.log(`   ✅ Found ${data.results.length} results`);
       return data.results.map(r => ({
         title: r.title || '',
         url: r.url || '',
@@ -121,6 +132,7 @@ async function searchWithExa(query) {
       }));
     }
     
+    console.log(`   ⚠️ No results in response`);
     return [];
   } catch (e) {
     console.log('❌ Exa API error:', e.message);
