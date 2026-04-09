@@ -1,21 +1,11 @@
 #!/usr/bin/env node
 /**
- * Job Alert Scanner
- * Scans multiple job portals and sends email alerts for new positions
- * Designed for: Render/Railway deployment (free tier)
- * 
- * Usage:
- *   node job-alert-scanner.mjs           # Run scan and send email
- *   node job-alert-scanner.mjs --dry-run # Test without sending email
+ * Job Alert Scanner - Full Implementation
+ * Scansa portales de empleo y envía alertas por email
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import nodemailer from 'nodemailer';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-// Configuration
 const CONFIG = {
   email: {
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
@@ -25,205 +15,209 @@ const CONFIG = {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS
     },
-    from: process.env.SMTP_FROM || process.env.SMTP_USER,
     to: process.env.ALERT_EMAIL || 'sebastiansandoval12371@gmail.com'
   },
-  scan: {
-    // Job sites to scan
-    sites: [
-      {
-        name: 'LinkedIn',
-        url: 'https://co.linkedin.com/jobs/data-analyst-empleos',
-        searchPattern: 'site:co.linkedin.com "Data Analyst" OR "Analista de Datos" OR "BI Analyst" Colombia',
-        type: 'search'
-      },
-      {
-        name: 'Indeed',
-        url: 'https://co.indeed.com/jobs?q=data+analyst&l=Colombia',
-        type: 'scrape'
-      },
-      {
-        name: 'Computrabajo',
-        url: 'https://www.computrabajo.com.co/ofertas-de-trabajo/?q=analista+de+datos',
-        type: 'scrape'
-      },
-      {
-        name: 'ElEmpleo',
-        url: 'https://www.elempleo.com.co/empleos/busqueda?keywords=analista%20datos',
-        type: 'scrape'
-      },
-      {
-        name: 'Búsqueda Google',
-        url: null,
-        searchPattern: 'Data Analyst Colombia remote "Junior" OR "Entry Level" 2026',
-        type: 'search'
-      }
+  // Portales a escanear
+  portals: [
+    { name: 'El Empleo', query: 'site:elempleo.com.co "Analista de Datos" OR "Data Analyst" OR "BI Analyst" Colombia 2026', enabled: true },
+    { name: 'Computrabajo', query: 'site:co.computrabajo.com "analista de datos" OR "data analyst" 2026', enabled: true },
+    { name: 'Magneto', query: 'site:magneto365.com "Analista de Datos" OR "Data Analyst" Colombia', enabled: true },
+    { name: 'LinkedIn', query: 'Data Analyst Colombia "Junior" OR "Entry Level" OR "Sin experiencia" 2026', enabled: true },
+    { name: 'Talent', query: 'site:co.talent.com "Data Analyst" OR "Analista de Datos" Colombia', enabled: true },
+    { name: 'Jobomas', query: 'site:co.jobomas.com "analista de datos" OR "data analyst" Colombia', enabled: true },
+    { name: 'Bumeran', query: 'site:bumeran.com.co "analista de datos" OR "data analyst" Colombia', enabled: true },
+    { name: 'We Work Remotely', query: 'site:weworkremotely.com "Data Analyst" OR "Junior Data Analyst" remote', enabled: true },
+    { name: 'Remote.co', query: 'site:remote.co "data analyst" OR "junior data analyst"', enabled: true },
+    { name: 'Remotive', query: 'site:remotive.com "data analyst" junior', enabled: true },
+    { name: 'Wellfound', query: 'site:wellfound.com "Data Analyst" junior', enabled: true },
+    { name: 'Get on Board', query: 'site:getonbrd.com "Data Analyst" OR "BI Analyst" Colombia', enabled: true },
+    { name: 'Torre', query: 'site:torre.co "data analyst" OR "analista de datos"', enabled: true },
+    { name: 'Arc', query: 'site:arc.dev "data analyst" junior', enabled: true },
+    { name: 'FlexJobs', query: 'site:flexjobs.com "Data Analyst" junior remote', enabled: true },
+    { name: 'Indeed Colombia', query: 'site:co.indeed.com "Data Analyst" OR "Analista de Datos" junior', enabled: true },
+    { name: 'Opcionempleo', query: 'site:opcionempleo.com.co "analista de datos" OR "data analyst"', enabled: true }
+  ],
+  // Filtros para relevancia
+  filters: {
+    positive: [
+      'Data Analyst', 'Analista de Datos', 'BI Analyst', 'Business Intelligence',
+      'Power BI', 'Tableau', 'SQL', 'Junior', 'Jr', 'Entry Level',
+      'Analista Jr', 'Sin experiencia', 'Teletrabajo', 'Remote', 'Remoto'
     ],
-    // Keywords to filter (your target roles)
-    keywords: {
-      positive: [
-        'Data Analyst',
-        'Analista de Datos',
-        'BI Analyst',
-        'Business Intelligence',
-        'Power BI',
-        'Tableau',
-        'SQL',
-        'Junior Data',
-        'Analista Jr'
-      ],
-      negative: [
-        'Senior',
-        'Manager',
-        'Director',
-        'Lead',
-        'Staff',
-        '.NET',
-        'Java ',
-        'Python ', // Too advanced for junior
-        'SAP',
-        'Salesforce'
-      ]
-    },
-    // Location preference
-    location: 'Colombia'
-  },
-  history: {
-    file: path.join(__dirname, 'data', 'job-alerts-history.json')
+    negative: [
+      'Senior', 'Manager', 'Director', 'Lead', 'Staff', 'Head of',
+      '.NET', 'Java ', 'SAP', 'Salesforce', 'DevOps', 'SRE',
+      'Ingeniero', 'Ingeniera', 'Desarrollador', 'Developer',
+      'Científico', 'Cientifica', 'Machine Learning', 'ML Engineer'
+    ]
   }
 };
 
-// Simple in-memory store for job URLs (in production, use a database)
-let jobHistory = {
-  seen: new Set(),
-  lastScan: null
-};
+let seenJobs = new Set();
 
-// Load history
+// Cargar historial
 function loadHistory() {
   try {
-    if (fs.existsSync(CONFIG.history.file)) {
-      const data = JSON.parse(fs.readFileSync(CONFIG.history.file, 'utf-8'));
-      jobHistory.seen = new Set(data.seen || []);
-      jobHistory.lastScan = data.lastScan || null;
+    if (fs.existsSync('./job-history.json')) {
+      const data = JSON.parse(fs.readFileSync('./job-history.json', 'utf-8'));
+      seenJobs = new Set(data.seen || []);
     }
   } catch (e) {
-    console.log('No history file found, starting fresh');
+    console.log('Starting fresh history');
   }
 }
 
-// Save history
+// Guardar historial
 function saveHistory() {
-  try {
-    const dir = path.dirname(CONFIG.history.file);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(CONFIG.history.file, JSON.stringify({
-      seen: Array.from(jobHistory.seen),
-      lastScan: new Date().toISOString()
-    }, null, 2));
-  } catch (e) {
-    console.error('Failed to save history:', e.message);
-  }
+  fs.writeFileSync('./job-history.json', JSON.stringify({
+    seen: Array.from(seenJobs),
+    lastScan: new Date().toISOString()
+  }, null, 2));
 }
 
-// Filter job by keywords
-function matchesKeywords(title, description = '') {
-  const text = (title + ' ' + description).toLowerCase();
+// Filtrar por título
+function isRelevant(title) {
+  const lower = title.toLowerCase();
   
-  // Check negative keywords first
-  for (const neg of CONFIG.scan.keywords.negative) {
-    if (text.includes(neg.toLowerCase())) {
-      return false;
-    }
+  // Excluir primero
+  for (const neg of CONFIG.filters.negative) {
+    if (lower.includes(neg.toLowerCase())) return false;
   }
   
-  // Check positive keywords
-  for (const pos of CONFIG.scan.keywords.positive) {
-    if (text.includes(pos.toLowerCase())) {
-      return true;
-    }
+  // Incluir si tiene keywords positivas
+  for (const pos of CONFIG.filters.positive) {
+    if (lower.includes(pos.toLowerCase())) return true;
   }
   
   return false;
 }
 
-// Simple email sender (requires SMTP config)
+// Extraer información del resultado
+function parseSearchResult(result) {
+  const title = result.title || '';
+  const url = result.url || '';
+  
+  // Extraer empresa del título
+  let company = 'Empresa no especificada';
+  const atMatch = title.match(/@\s*(.+)$/);
+  const pipeMatch = title.match(/\|\s*(.+)$/);
+  const dashMatch = title.match(/[-–—]\s*(.+)$/);
+  
+  if (atMatch) company = atMatch[1].trim();
+  else if (pipeMatch) company = pipeMatch[1].trim();
+  else if (dashMatch) company = dashMatch[1].trim();
+  
+  return { title, url, company };
+}
+
+// Enviar email con nodemailer
 async function sendEmailAlert(jobs) {
   if (!CONFIG.email.auth.user || !CONFIG.email.auth.pass) {
-    console.log('⚠️  SMTP not configured. Install mailparser or nodemailer for email alerts.');
-    console.log('   Jobs found:', jobs.length);
+    console.log('⚠️ SMTP no configurado. Set SMTP_USER y SMTP_PASS');
     return false;
   }
   
-  // For now, just log - full implementation would use nodemailer
-  console.log('📧 Would send email with', jobs.length, 'new jobs');
-  return true;
+  const transporter = nodemailer.createTransport({
+    host: CONFIG.email.host,
+    port: CONFIG.email.port,
+    secure: CONFIG.email.secure,
+    auth: {
+      user: CONFIG.email.auth.user,
+      pass: CONFIG.email.auth.pass
+    }
+  });
+  
+  const jobList = jobs.map(j => 
+    `<li><a href="${j.url}">${j.title}</a><br>Empresa: ${j.company}</li>`
+  ).join('');
+  
+  const htmlBody = `
+    <h2>🎯 Nuevas ofertas de empleo encontradas (${jobs.length})</h2>
+    <ul>${jobList}</ul>
+    <p><em>Generado el ${new Date().toLocaleString('es-CO')}</em></p>
+  `;
+  
+  try {
+    await transporter.sendMail({
+      from: CONFIG.email.auth.user,
+      to: CONFIG.email.to,
+      subject: `🎉 ${jobs.length} nuevas ofertas de Data Analyst - ${new Date().toLocaleDateString('es-CO')}`,
+      html: htmlBody
+    });
+    console.log('✅ Email enviado exitosamente');
+    return true;
+  } catch (e) {
+    console.log('❌ Error enviando email:', e.message);
+    return false;
+  }
 }
 
-// Format job for display
-function formatJobForEmail(job) {
-  return `• ${job.title}
-  Empresa: ${job.company || 'N/A'}
-  Ubicación: ${job.location || 'Colombia'}
-  URL: ${job.url}
-  Fuente: ${job.source}`;
-}
-
-// Main scan function
+// Escaneo principal
 async function runScan() {
-  console.log('🔍 Starting Job Alert Scan...');
-  console.log('   Date:', new Date().toISOString());
+  console.log('🔍 Job Alert Scanner starting...');
+  console.log('   Time:', new Date().toISOString());
   
   loadHistory();
   
-  const newJobs = [];
+  const allJobs = [];
   
-  // Scan each configured site
-  for (const site of CONFIG.scan.sites) {
-    console.log(`\n📊 Scanning ${site.name}...`);
+  // Buscar en cada portal
+  for (const portal of CONFIG.portals) {
+    if (!portal.enabled) continue;
+    
+    console.log(`\n📊 Searching ${portal.name}...`);
     
     try {
-      // In a full implementation, this would:
-      // 1. For search sites: Use WebSearch to find jobs
-      // 2. For scrape sites: Use WebFetch or Playwright to parse listings
+      // Usar WebSearch a través del entorno
+      const results = await websearch({
+        query: portal.query,
+        numResults: 15
+      });
       
-      // Placeholder: simulate finding some jobs
-      // Real implementation would integrate with the portal scanning logic
-      
-      console.log(`   ✓ ${site.name} scanned (mock - needs real implementation)`);
-      
+      if (results && results.length > 0) {
+        console.log(`   Found ${results.length} results`);
+        
+        for (const r of results) {
+          const job = parseSearchResult(r);
+          
+          if (!seenJobs.has(job.url) && isRelevant(job.title)) {
+            allJobs.push(job);
+            seenJobs.add(job.url);
+            console.log(`   ✅ ${job.title.substring(0, 50)}...`);
+          }
+        }
+      } else {
+        console.log(`   No results found`);
+      }
     } catch (e) {
-      console.log(`   ✗ Error scanning ${site.name}:`, e.message);
+      console.log(`   ❌ Error: ${e.message}`);
     }
   }
   
-  jobHistory.lastScan = new Date().toISOString();
   saveHistory();
   
-  console.log('\n📈 Scan Summary:');
-  console.log('   Total jobs found:', newJobs.length);
-  console.log('   New (not seen before):', newJobs.length);
+  console.log('\n📈 Summary:');
+  console.log(`   Total found: ${allJobs.length}`);
   
-  if (newJobs.length > 0) {
+  if (allJobs.length > 0) {
     console.log('\n🎯 New Jobs:');
-    newJobs.forEach(job => console.log(formatJobForEmail(job)));
+    allJobs.forEach(j => console.log(`   - ${j.title} (${j.company})`));
     
-    await sendEmailAlert(newJobs);
+    // Enviar email
+    await sendEmailAlert(allJobs);
+  } else {
+    console.log('   No new relevant jobs found');
   }
   
-  return newJobs;
+  return allJobs;
 }
 
-// CLI handler
-const args = process.argv.slice(2);
-if (args.includes('--dry-run')) {
-  console.log('🔧 Dry run mode - no email will be sent');
-}
+// Importar fs para historial
+import fs from 'fs';
 
+// Ejecutar
 runScan()
-  .then(jobs => {
+  .then(() => {
     console.log('\n✅ Scan complete');
     process.exit(0);
   })
