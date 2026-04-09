@@ -25,31 +25,31 @@ const CONFIG = {
   
   // Portales a escanear
   portals: [
-    { name: 'El Empleo', query: 'Analista de Datos OR Data Analyst OR BI Analyst site:elempleo.com.co', enabled: true },
-    { name: 'Computrabajo', query: 'analista de datos OR data analyst site:co.computrabajo.com', enabled: true },
-    { name: 'Magneto', query: 'Analista de Datos OR Data Analyst site:magneto365.com', enabled: true },
-    { name: 'LinkedIn', query: 'Data Analyst junior Colombia LinkedIn', enabled: true },
-    { name: 'Talent', query: 'Data Analyst OR Analista de Datos site:co.talent.com', enabled: true },
-    { name: 'Jobomas', query: 'analista de datos OR data analyst site:co.jobomas.com', enabled: true },
-    { name: 'Bumeran', query: 'analista de datos site:bumeran.com.co', enabled: true },
+    { name: 'El Empleo', query: 'Analista de Datos OR Data Analyst OR BI Analyst site:elempleo.com.co Bogota OR Remoto OR Teletrabajo', enabled: true },
+    { name: 'Computrabajo', query: 'analista de datos OR data analyst site:co.computrabajo.com Bogota OR Remoto', enabled: true },
+    { name: 'Magneto', query: 'Analista de Datos OR Data Analyst site:magneto365.com Bogota OR Remoto', enabled: true },
+    { name: 'LinkedIn', query: 'Data Analyst junior Bogota Colombia OR Remoto OR "Trabajo Remoto" OR Hibrido', enabled: true },
+    { name: 'Talent', query: 'Data Analyst OR Analista de Datos site:co.talent.com Bogota OR Remoto OR Remoto', enabled: true },
+    { name: 'Bumeran', query: 'analista de datos site:bumeran.com.co Bogota OR Remoto', enabled: true },
     { name: 'We Work Remotely', query: 'Data Analyst OR Junior Data Analyst site:weworkremotely.com', enabled: true },
-    { name: 'Remote.co', query: 'data analyst site:remote.co', enabled: true },
-    { name: 'Remotive', query: 'data analyst site:remotive.com', enabled: true },
-    { name: 'Wellfound', query: 'Data Analyst site:wellfound.com', enabled: true },
-    { name: 'Get on Board', query: 'Data Analyst OR BI Analyst site:getonbrd.com', enabled: true },
-    { name: 'Indeed Colombia', query: 'Data Analyst site:co.indeed.com', enabled: true }
+    { name: 'Remote.co', query: 'data analyst site:remote.co Latin America OR Colombia OR Bogota', enabled: true },
+    { name: 'Remotive', query: 'data analyst site:remotive.com Latin America OR Colombia', enabled: true },
+    { name: 'Get on Board', query: 'Data Analyst OR BI Analyst site:getonbrd.com Colombia Bogota OR Remoto', enabled: true },
+    { name: 'Indeed Colombia', query: 'Data Analyst site:co.indeed.com Bogota OR Remoto', enabled: true }
   ],
   
   filters: {
     positive: [
       'Data Analyst', 'Analista de Datos', 'BI Analyst', 'Business Intelligence',
       'Power BI', 'Tableau', 'SQL', 'Junior', 'Jr', 'Entry Level',
-      'Analista Jr', 'Teletrabajo', 'Remoto', 'Hybrid'
+      'Analista Jr', 'Teletrabajo', 'Remoto', 'Hybrid', 'Bogotá', 'Bogota', 'Remoto'
     ],
     negative: [
-      'Senior', 'Manager', 'Director', 'Lead', 'Staff',
-      '.NET', 'Java ', 'SAP', 'Salesforce', 'DevOps',
-      'Desarrollador', 'Developer', 'Científico', 'Machine Learning'
+      'Senior', 'Manager', 'Director', 'Lead', 'Staff', 'Head of',
+      '.NET', 'Java ', 'SAP', 'Salesforce', 'DevOps', 'SRE',
+      'Desarrollador', 'Developer', 'Científico', 'Machine Learning',
+      'Ingeniero', 'Ingeniera', '3+', '5+', '7+', '10+ años',
+      'Arquitecto', 'Especialista', 'Coordinador'
     ]
   }
 };
@@ -101,6 +101,11 @@ async function searchWithExa(query) {
   try {
     console.log(`   🔍 Query: ${query.substring(0, 80)}...`);
     
+    // Buscar solo último contenido (última semana)
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    const dateStr = oneWeekAgo.toISOString().split('T')[0];
+    
     const response = await fetch('https://api.exa.ai/search', {
       method: 'POST',
       headers: {
@@ -110,7 +115,8 @@ async function searchWithExa(query) {
       body: JSON.stringify({
         query: query,
         numResults: 15,
-        type: 'keyword'
+        type: 'keyword',
+        startPublishedDate: dateStr  // Solo última semana
       })
     });
     
