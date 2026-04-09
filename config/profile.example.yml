@@ -1,67 +1,90 @@
 # Career-Ops Profile Configuration
-# Copy this file to config/profile.yml and fill in your details.
-# This is the single source of truth for your personal data across all modes.
+# Copy this file to config/profile.yml
 
 candidate:
-  full_name: "Jane Smith"
-  email: "jane@example.com"
-  phone: "+1-555-0123"
-  location: "San Francisco, CA"
-  linkedin: "linkedin.com/in/janesmith"
-  portfolio_url: "https://janesmith.dev"
-  github: "github.com/janesmith"
-  twitter: "https://x.com/janesmith"
+  full_name: "Juan Sebastian Sandoval Acevedo"
+  email: "sebastiansandoval12371@gmail.com"
+  phone: "+57 3007972184"
+  location: "Bogotá D.C., Colombia"
+  linkedin: "linkedin.com/in/juan-sebastian-sandoval-686264292"
+  portfolio_url: "https://github.com/Sebas0317"  # Tu GitHub portfolio
+  github: "github.com/Sebas0317"
+  twitter: ""  # Opcional
 
 target_roles:
-  # Your North Star roles — what you're optimizing for
   primary:
-    - "Senior AI Engineer"
-    - "Staff ML Engineer"
-  # Archetypes help the evaluation system score fit
+    - "Junior Data Analyst"
+    - "Data Analyst"
+    - "Business Intelligence Analyst"
   archetypes:
-    - name: "AI/ML Engineer"
-      level: "Senior/Staff"
-      fit: "primary"        # primary = dream role, secondary = good fit, adjacent = stretch
-    - name: "AI Product Manager"
-      level: "Senior"
-      fit: "secondary"
-    - name: "Solutions Architect"
-      level: "Mid-Senior"
+    - name: "Data Analyst"
+      level: "Junior"
+      fit: "primary"
+    - name: "BI Analyst"
+      level: "Junior"
+      fit: "primary"
+    - name: "Data Engineer"
+      level: "Intern/Junior"
       fit: "adjacent"
 
 narrative:
-  # Your professional headline (1 line)
-  headline: "ML Engineer turned AI product builder"
-  # Your exit story — what makes you unique
-  exit_story: "Built and sold my SaaS after 5 years. Now focused on applied AI at scale."
-  # Your top 3-5 superpowers
+  headline: "Junior Data Analyst | SQL • Power BI • Excel • Data Cleaning & Reporting"
+  exit_story: "Apasionado por transformar datos en insights accionables para mejorar decisiones de negocio. Experiencia en dashboards, automatización de reportes y análisis de datos reales."
   superpowers:
-    - "End-to-end ML pipelines"
-    - "Fast prototyping (idea to prod in 2 weeks)"
-    - "Cross-functional communication"
-  # Proof points — projects, articles, case studies with measurable impact
+    - "Análisis de datos y limpieza de información"
+    - "Dashboards interactivos en Power BI y Tableau"
+    - "Automatización de reportes en Excel y Power Query"
+    - "SQL para consultas y análisis de datos"
   proof_points:
-    - name: "Project Alpha"
-      url: "https://janesmith.dev/project-alpha"
-      hero_metric: "Reduced inference latency 40%"
-    - name: "Open Source Tool"
-      url: "https://github.com/janesmith/tool"
-      hero_metric: "2K+ GitHub stars"
-  # Optional: dashboard/demo URL with credentials
-  # dashboard:
-  #   url: "https://janesmith.dev/demo"
-  #   password: "demo-2026"
+    - name: "Retail Fashion Performance Dashboard – Power BI"
+      url: "https://github.com/Sebas0317/Retail-Sales-Dashboard-PowerBI"
+      hero_metric: "Analizó +125K unidades, revenue 537M, profit 53.6M"
+    - name: "EDA – 10.000 Empresas Más Grandes de Colombia"
+      url: "https://github.com/Sebas0317/analisis-top-1000-empresas-colombia-2023"
+      hero_metric: "Identificó concentración económica +70% en Bogotá y Antioquia, sectores en riesgo"
 
 compensation:
-  target_range: "$150K-200K"     # Your target total comp
-  currency: "USD"
-  minimum: "$120K"               # Walk-away number
-  location_flexibility: "Remote preferred, 1 week/month on-site possible"
+  target_range: "Negotiable"
+  currency: "COP"
+  minimum: ""
+  location_flexibility: "Preferencia Bogotá, remoto opcional"
 
 location:
-  country: "United States"
-  city: "San Francisco"
-  timezone: "PST"
-  visa_status: "No sponsorship needed"
-  # For remote roles outside your country:
-  # onsite_availability: "1 week/month in any city"
+  country: "Colombia"
+  city: "Bogotá D.C."
+  timezone: "COT"
+  visa_status: "N/A"
+
+education:
+  - degree: "Ingeniería de Sistemas (En curso)"
+    institution: "Universidad del Tolima"
+    graduation_year: 2029
+  - degree: "Tecnólogo en Análisis y Desarrollo de Software"
+    institution: "SENA"
+    graduation_year: 2024
+
+certifications:
+  - name: "Associate Data Analyst in SQL"
+    provider: "DataCamp"
+    year: 2025
+  - name: "Data Analyst in Power BI"
+    provider: "DataCamp"
+    year: 2024
+  - name: "Data Analyst in Tableau"
+    provider: "DataCamp"
+    year: 2024
+  - name: "Google Advanced Data Analytics Specialization"
+    provider: "Google"
+    year: 2024
+  - name: "Google Data Analytics Specialization"
+    provider: "Google"
+    year: 2024
+
+skills:
+  data_analysis: ["Data Cleaning", "Data Transformation", "EDA", "KPIs"]
+  programming_databases: ["SQL", "MySQL", "Python (básico)"]
+  data_visualization: ["Power BI (DAX, Power Query)", "Tableau", "Excel (Power Query, Power Pivot)"]
+  data_handling_automation: ["ETL Básico", "Reportes Automatizados"]
+  tools_others: ["Git", "Azure DevOps"]
+  methodologies: ["Scrum"]
+  languages: ["Spanish (Native)", "English (B1)"]
