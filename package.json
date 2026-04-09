@@ -1,27 +1,14 @@
 {
-  "name": "career-ops",
+  "name": "job-notifier",
   "version": "1.0.0",
-  "description": "AI-powered job search pipeline built on Claude Code",
+  "type": "module",
+  "description": "Job alert scanner that sends email notifications",
+  "main": "job-alert-scanner.mjs",
   "scripts": {
-    "verify": "node verify-pipeline.mjs",
-    "normalize": "node normalize-statuses.mjs",
-    "dedup": "node dedup-tracker.mjs",
-    "merge": "node merge-tracker.mjs",
-    "pdf": "node generate-pdf.mjs",
-    "sync-check": "node cv-sync-check.mjs",
-    "update:check": "node update-system.mjs check",
-    "update": "node update-system.mjs apply",
-    "rollback": "node update-system.mjs rollback"
+    "start": "node job-alert-scanner.mjs"
   },
-  "keywords": ["ai", "job-search", "claude-code", "career", "automation"],
-  "author": "Santiago Fernández de Valderrama <hi@santifer.io> (https://santifer.io)",
-  "homepage": "https://santifer.io",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/santifer/career-ops"
-  },
-  "license": "MIT",
   "dependencies": {
-    "playwright": "^1.58.1"
+    "nodemailer": "^6.9.0",
+    "node-fetch": "^3.3.2"
   }
 }
